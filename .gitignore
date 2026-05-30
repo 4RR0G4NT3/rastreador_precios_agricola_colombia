@@ -28,3 +28,6 @@ src/db/20*
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Respaldos
+replica/
