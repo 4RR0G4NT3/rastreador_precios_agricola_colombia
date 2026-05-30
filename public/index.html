@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastreador de Precios Agrícolas</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Rastreador de Precios Agrícolas - Colombia</h1>
+        <p>Datos abiertos basados en SIPSA (datos.gov.co)</p>
+    </header>
+
+    <main>
+        <section class="controls-section">
+            <div class="control-group">
+                <label for="productSelect">Producto:</label>
+                <select id="productSelect">
+                    <option value="">Cargando productos...</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="marketSelect">Mercado/Ciudad:</label>
+                <select id="marketSelect">
+                    <option value="">Cargando mercados...</option>
+                </select>
+            </div>
+
+            <button id="searchBtn">Actualizar Gráfico</button>
+        </section>
+
+        <section class="chart-section">
+            <canvas id="priceChart"></canvas>
+        </section>
+        
+        <section class="data-table-section">
+            <h2>Datos Históricos</h2>
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Producto</th>
+                            <th>Mercado</th>
+                            <th>Precio (COP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Proyecto Rastreador de Precios - Desarrollado en Node.js Puro</p>
+    </footer>
+
+    <script src="/js/app.js" type="module"></script>
+</body>
+</html>
