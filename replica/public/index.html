@@ -1,26 +1,62 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-9">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rastreador de Precios Agrícolas</title>
+    <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-	<header>
-		<h1>Rastreador de Precios Agrícolas - Colombia</h1>
-		<p>Datos abiertos basados en SIPSA (datos.gov.co)</p> 
-	</header>
+    <header>
+        <h1>Rastreador de Precios Agrícolas - Colombia</h1>
+        <p>Datos abiertos basados en SIPSA (datos.gov.co)</p> 
+    </header>
 
-	<main>
-		<section>
-			<div>
-				<label>Producto:</label>
-				<select>
-					<option>Cargando productos...</option>
-				</select>
-			</div>
-		</section>
-	</main>
+    <main>
+        <section>
+            <div>
+                <label>Producto:</label>
+                <select>
+                    <option>Cargando productos...</option>
+                </select>
+            </div>
+            <div>
+                <label>Ciudad:</label>
+                <select>
+                    <option>Cargando mercados...</option>
+                </select>
+            </div>
+            <button>Actualizar Gráfico</button>
+        </section>
+
+        <section>
+            <canvas></canvas>
+        </section>
+
+        <section>
+            <h2>Datos históricos</h2>
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Producto</th>
+                            <th>Ciudad</th>
+                            <th>Precio (COP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Proyecto rastreador de precios</p>
+    </footer>
+
+    <script src="/js/app.js" type="module"></script>
 </body>
 </html>

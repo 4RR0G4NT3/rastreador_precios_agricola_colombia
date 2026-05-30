@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Configuración y Secretos
+.env
+
+# Datos Históricos (Archivos Pesados)
+# Ignoramos todos los archivos dentro de src/db excepto el archivo de conexión db.js
+# y los scripts de importación si estuvieran allí.
+src/db/**/*.csv
+src/db/**/*.zip
+src/db/**/*.dta
+src/db/**/*.sav
+src/db/20*
+
+# Si quieres subir la estructura de carpetas pero no los datos, podrías usar:
+# !src/db/db.js
+
+# IDEs y Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema
+.DS_Store
+Thumbs.db

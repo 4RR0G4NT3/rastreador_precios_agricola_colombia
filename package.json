@@ -13,7 +13,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "csv-parser": "^3.2.1",
     "dotenv": "^17.4.2",
-    "mongodb": "^7.2.0"
+    "iconv-lite": "^0.7.2",
+    "mongodb": "^7.2.0",
+    "soap": "^1.9.3"
   }
 }

@@ -1,119 +1,129 @@
 import { getDB } from '../db/db.js';
+import soap from 'soap';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Defaulting to a common Socrata API URL format. User can change this in .env
-// We limit to 500 records per fetch just as an example
-const DATA_URL = process.env.DATA_URL || 'https://www.datos.gov.co/resource/cq88-qaaa.json?$limit=500';
+// DANE SIPSA SOAP WSDL URL
+const WSDL_URL = 'http://appweb.dane.gov.co/sipsaWS/SrvSipsaUpraBeanService?WSDL';
 const INGEST_INTERVAL_MS = process.env.INGEST_INTERVAL_MS || 24 * 60 * 60 * 1000; // 24 hours
 
 export async function fetchAgriculturalData() {
-    console.log(`[Ingest Worker] Fetching data from ${DATA_URL}`);
-    try {
-        const response = await fetch(DATA_URL);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('[Ingest Worker] Error fetching data:', error);
-        
-        // --- Fallback/Mock Data for Demonstration ---
-        console.log('[Ingest Worker] Falling back to mock data for demonstration purposes.');
-        return [
-            {
-                producto: 'Arroz',
-                mercado: 'Bogotá - Corabastos',
-                precio_promedio: Math.floor(Math.random() * 1000) + 2000,
-                fecha: new Date().toISOString()
-            },
-            {
-                producto: 'Papa Pastusa',
-                mercado: 'Bogotá - Corabastos',
-                precio_promedio: Math.floor(Math.random() * 500) + 1000,
-                fecha: new Date().toISOString()
-            },
-            {
-                producto: 'Arroz',
-                mercado: 'Medellín - Mayorista',
-                precio_promedio: Math.floor(Math.random() * 1000) + 2100,
-                fecha: new Date().toISOString()
+    console.log(`[Ingest Worker] Connecting to DANE SOAP Service: ${WSDL_URL}`);
+    
+    return new Promise((resolve, reject) => {
+        soap.createClient(WSDL_URL, async (err, client) => {
+            if (err) {
+                console.error('[Ingest Worker] Error creating SOAP client:', err);
+                return resolve(getMockData()); // Fallback to mock on error
             }
-        ];
-    }
+
+            try {
+                // We use 'promedioAbasSipsaMesMadr' as an example method.
+                // This typically requires parameters like month and year.
+                // For a real production app, we would iterate over recent months.
+                const now = new Date();
+                const args = {
+                    // Parameters based on DANE WSDL documentation
+                    // Usually: anio, mes
+                    anio: now.getFullYear().toString(),
+                    mes: (now.getMonth() + 1).toString() 
+                };
+
+                console.log(`[Ingest Worker] Calling promedioAbasSipsaMesMadr with args:`, args);
+
+                client.promedioAbasSipsaMesMadr(args, (err, result) => {
+                    if (err) {
+                        console.error('[Ingest Worker] SOAP Call Error:', err);
+                        return resolve(getMockData());
+                    }
+
+                    // Process the XML/Object result from SOAP
+                    // The structure depends on the DANE response. 
+                    // Usually it's an array of objects inside return.
+                    const rawRecords = result?.return || [];
+                    console.log(`[Ingest Worker] Received ${rawRecords.length} records from DANE.`);
+                    
+                    if (rawRecords.length === 0) {
+                        return resolve(getMockData());
+                    }
+
+                    // Map DANE fields to our schema
+                    const formattedData = rawRecords.map(item => ({
+                        producto: item.producto || item.nombreProducto || 'Desconocido',
+                        mercado: item.fuente || item.nombreFuente || 'Desconocido',
+                        precio: parseFloat(item.precioPromedio || item.valor || 0),
+                        fecha: new Date(), // DANE monthly data usually implies the current month
+                        raw_data: item
+                    }));
+
+                    resolve(formattedData);
+                });
+            } catch (error) {
+                console.error('[Ingest Worker] Unexpected error during SOAP execution:', error);
+                resolve(getMockData());
+            }
+        });
+    });
+}
+
+function getMockData() {
+    console.log('[Ingest Worker] Falling back to mock data.');
+    return [
+        {
+            producto: 'Arroz (DANE Mock)',
+            mercado: 'Bogotá - Corabastos',
+            precio: Math.floor(Math.random() * 1000) + 2000,
+            fecha: new Date()
+        },
+        {
+            producto: 'Papa Pastusa (DANE Mock)',
+            mercado: 'Bogotá - Corabastos',
+            precio: Math.floor(Math.random() * 500) + 1000,
+            fecha: new Date()
+        }
+    ];
 }
 
 export async function processAndSaveData(data) {
-    if (!Array.isArray(data) || data.length === 0) {
-        console.log('[Ingest Worker] No data to process.');
-        return;
-    }
+    if (!Array.isArray(data) || data.length === 0) return;
 
     const db = getDB();
     const collection = db.collection('prices');
-
-    let insertedCount = 0;
-    let updatedCount = 0;
+    let inserted = 0;
+    let updated = 0;
 
     for (const item of data) {
-        // Map common Socrata dataset field names to our schema
-        // Adjust these mappings based on the actual dataset structure from datos.gov.co
-        const producto = item.producto || item.producto_nombre || item.nombre_producto || 'Desconocido';
-        const mercado = item.mercado || item.ciudad || item.municipio || 'Desconocido';
-        const precio = parseFloat(item.precio_promedio || item.precio || 0);
-        
-        // Try to parse the date, default to now if missing
-        let fecha = new Date();
-        if (item.fecha || item.fecha_registro) {
-            fecha = new Date(item.fecha || item.fecha_registro);
-        }
-
-        // We use a combination of product, market, and date as a unique identifier 
-        // to avoid duplicate entries (upsert)
         const filter = {
-            producto: producto,
-            mercado: mercado,
-            // To simplify matching, we could match by exact date (day)
-            // Here we use the exact Date object or string for exact match
-            fecha: fecha 
+            producto: item.producto,
+            mercado: item.mercado,
+            fecha: {
+                $gte: new Date(item.fecha.getFullYear(), item.fecha.getMonth(), 1),
+                $lt: new Date(item.fecha.getFullYear(), item.fecha.getMonth() + 1, 1)
+            }
         };
 
         const update = {
             $set: {
-                producto,
-                mercado,
-                precio,
-                fecha,
-                raw_data: item // Store the original raw data just in case
+                ...item,
+                updatedAt: new Date()
             }
         };
 
         const result = await collection.updateOne(filter, update, { upsert: true });
-        
-        if (result.upsertedCount > 0) {
-            insertedCount++;
-        } else if (result.modifiedCount > 0) {
-            updatedCount++;
-        }
+        if (result.upsertedCount > 0) inserted++;
+        else if (result.modifiedCount > 0) updated++;
     }
 
-    console.log(`[Ingest Worker] Finished processing. Inserted: ${insertedCount}, Updated: ${updatedCount}`);
+    console.log(`[Ingest Worker] DB Sync: ${inserted} new, ${updated} updated.`);
 }
 
 export async function runIngestionJob() {
-    console.log(`[Ingest Worker] Starting job at ${new Date().toISOString()}`);
     const data = await fetchAgriculturalData();
     await processAndSaveData(data);
-    console.log(`[Ingest Worker] Job finished at ${new Date().toISOString()}`);
 }
 
 export function startIngestionJob() {
-    // Run immediately on startup
     runIngestionJob();
-
-    // Then run periodically
     setInterval(runIngestionJob, INGEST_INTERVAL_MS);
-    console.log(`[Ingest Worker] Scheduled to run every ${INGEST_INTERVAL_MS} ms.`);
 }
