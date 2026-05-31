@@ -14,7 +14,8 @@ export async function connectDB() {
     try {
         client = new MongoClient(uri);
         await client.connect();
-        console.log('Connected successfully to MongoDB');
+        const mode = process.env.NODE_ENV === 'production' ? 'Production' : 'Development';
+        console.log(`Connected successfully to MongoDB [Mode: ${mode}]`);
         db = client.db(dbName);
         return db;
     } catch (error) {
