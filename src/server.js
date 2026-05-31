@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { connectDB } from './db/db.js';
 import { handleApiRoutes } from './api/routes.js';
-import { startIngestionJob } from './services/ingest.js';
 
 dotenv.config();
 
@@ -62,9 +61,6 @@ async function startServer() {
         server.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT}`);
         });
-
-        // Start background worker
-        startIngestionJob();
         
     } catch (error) {
         console.error('Failed to start server:', error);
