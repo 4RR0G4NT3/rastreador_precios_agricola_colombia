@@ -1,10 +1,36 @@
 let chartInstance = null;
+let currentPage = 1;
+const ITEMS_PER_PAGE = 50;
+const MAX_CHART_POINTS = 2000;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Set default dates (last 6 months)
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 6);
+    
+    document.getElementById('startDate').value = start.toISOString().split('T')[0];
+    document.getElementById('endDate').value = end.toISOString().split('T')[0];
+
     await loadProducts();
     await loadMarkets();
 
-    document.getElementById('searchBtn').addEventListener('click', updateData);
+    document.getElementById('searchBtn').addEventListener('click', () => {
+        currentPage = 1;
+        updateAll();
+    });
+
+    document.getElementById('prevPage').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            updateTableData();
+        }
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+        currentPage++;
+        updateTableData();
+    });
 });
 
 async function loadProducts() {
@@ -47,32 +73,61 @@ async function loadMarkets() {
     }
 }
 
-async function updateData() {
+async function updateAll() {
+    await Promise.all([
+        updateChartData(),
+        updateTableData()
+    ]);
+}
+
+function getQueryString(limit, page) {
     const product = document.getElementById('productSelect').value;
     const market = document.getElementById('marketSelect').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
 
-    let url = '/api/prices?';
-    if (product) url += `product=${encodeURIComponent(product)}&`;
-    if (market) url += `market=${encodeURIComponent(market)}`;
+    let params = new URLSearchParams();
+    if (product) params.append('product', product);
+    if (market) params.append('market', market);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (limit) params.append('limit', limit);
+    if (page) params.append('page', page);
 
+    return params.toString();
+}
+
+async function updateChartData() {
+    const url = `/api/prices?${getQueryString(MAX_CHART_POINTS)}`;
     try {
         const response = await fetch(url);
-        const data = await response.json();
-        
-        updateChart(data);
-        updateTable(data);
+        const result = await response.json();
+        updateChart(result.data);
     } catch (error) {
-        console.error('Error fetching data:', error);
-        alert('Hubo un error al obtener los datos.');
+        console.error('Error fetching chart data:', error);
+    }
+}
+
+async function updateTableData() {
+    const url = `/api/prices?${getQueryString(ITEMS_PER_PAGE, currentPage)}`;
+    try {
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        updateTable(result.data);
+        updatePaginationUI(result.total, result.page, result.totalPages);
+    } catch (error) {
+        console.error('Error fetching table data:', error);
+        alert('Hubo un error al obtener los datos de la tabla.');
     }
 }
 
 function updateChart(data) {
     const ctx = document.getElementById('priceChart').getContext('2d');
     
-    // Group data by product if multiple products are shown, or just plot a simple line.
-    // For simplicity, let's plot a single line if a product is selected.
-    
+    // Sort data by date just in case
+    data.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
     const labels = data.map(item => new Date(item.fecha).toLocaleDateString());
     const prices = data.map(item => item.precio);
 
@@ -91,7 +146,8 @@ function updateChart(data) {
                 backgroundColor: 'rgba(46, 125, 50, 0.1)',
                 borderWidth: 2,
                 fill: true,
-                tension: 0.1
+                tension: 0.1,
+                pointRadius: data.length > 100 ? 0 : 3 // Hide points if too many
             }]
         },
         options: {
@@ -111,6 +167,12 @@ function updateChart(data) {
                         text: 'Fecha'
                     }
                 }
+            },
+            plugins: {
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
             }
         }
     };
@@ -122,13 +184,14 @@ function updateTable(data) {
     const tbody = document.querySelector('#dataTable tbody');
     tbody.innerHTML = '';
 
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No hay datos disponibles para esta búsqueda</td></tr>';
         return;
     }
 
-    // Show only latest 100 in the table to avoid freezing
-    const tableData = data.slice().reverse().slice(0, 100);
+    // We show data as it comes from API (already sorted by date ASC by default, but we might want latest first in table)
+    // Actually the API sorts by date ASC. Let's reverse it for the table to see latest first.
+    const tableData = [...data].reverse();
 
     tableData.forEach(item => {
         const tr = document.createElement('tr');
@@ -152,4 +215,12 @@ function updateTable(data) {
         
         tbody.appendChild(tr);
     });
+}
+
+function updatePaginationUI(total, page, totalPages) {
+    document.getElementById('recordCount').textContent = `Total registros: ${total.toLocaleString()}`;
+    document.getElementById('pageIndicator').textContent = `Página ${page} de ${totalPages || 1}`;
+    
+    document.getElementById('prevPage').disabled = (page <= 1);
+    document.getElementById('nextPage').disabled = (page >= totalPages);
 }

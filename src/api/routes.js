@@ -28,7 +28,7 @@ export async function handleApiRoutes(req, res) {
             }
 
             if (pathname === '/api/prices') {
-                const { product, market, startDate, endDate } = query;
+                const { product, market, startDate, endDate, page, limit } = query;
                 
                 const filter = {};
                 if (product) filter.producto = product;
@@ -40,13 +40,24 @@ export async function handleApiRoutes(req, res) {
                     if (endDate) filter.fecha.$lte = new Date(endDate);
                 }
 
+                const pageNum = parseInt(page) || 1;
+                const limitNum = parseInt(limit) || 1000;
+                const skip = (pageNum - 1) * limitNum;
+
+                const total = await collection.countDocuments(filter);
                 const prices = await collection.find(filter)
-                    .sort({ fecha: 1 }) // Sort by date ascending
-                    .limit(1000) // Limit to prevent massive payloads
+                    .sort({ fecha: 1 })
+                    .skip(skip)
+                    .limit(limitNum)
                     .toArray();
                     
                 res.writeHead(200);
-                res.end(JSON.stringify(prices));
+                res.end(JSON.stringify({
+                    data: prices,
+                    total,
+                    page: pageNum,
+                    totalPages: Math.ceil(total / limitNum)
+                }));
                 return;
             }
         }

@@ -30,6 +30,16 @@
                 </select>
             </div>
 
+            <div class="control-group">
+                <label for="startDate">Desde:</label>
+                <input type="date" id="startDate">
+            </div>
+
+            <div class="control-group">
+                <label for="endDate">Hasta:</label>
+                <input type="date" id="endDate">
+            </div>
+
             <button id="searchBtn">Actualizar Gráfico</button>
         </section>
 
@@ -39,6 +49,9 @@
         
         <section class="data-table-section">
             <h2>Datos Históricos</h2>
+            <div class="pagination-info">
+                <span id="recordCount">Total registros: 0</span>
+            </div>
             <div class="table-container">
                 <table id="dataTable">
                     <thead>
@@ -53,6 +66,11 @@
                         <!-- Rows will be populated by JS -->
                     </tbody>
                 </table>
+            </div>
+            <div class="pagination-controls">
+                <button id="prevPage" disabled>Anterior</button>
+                <span id="pageIndicator">Página 1 de 1</span>
+                <button id="nextPage" disabled>Siguiente</button>
             </div>
         </section>
     </main>

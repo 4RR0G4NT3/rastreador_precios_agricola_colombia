@@ -64,8 +64,7 @@ main {
     margin-bottom: 0.5rem;
     color: var(--text-color);
 }
-
-select {
+select, input[type="date"] {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -73,7 +72,31 @@ select {
     background-color: #fff;
 }
 
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+#pageIndicator {
+    font-weight: 600;
+}
+
 button {
+...
     background-color: var(--primary-color);
     color: white;
     border: none;
