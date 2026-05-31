@@ -7,7 +7,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx playwright test",
+    "test:modular": "npx playwright test --project=modular",
+    "test:e2e": "npx playwright test --project=e2e",
+    "test:acceptance": "npx playwright test --project=acceptance",
+    "test:perf": "echo 'Run k6 scripts in tests/performance' && exit 0"
   },
   "keywords": [],
   "author": "",
@@ -17,5 +21,9 @@
     "dotenv": "^17.4.2",
     "iconv-lite": "^0.7.2",
     "mongodb": "^7.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "playwright-bdd": "^8.5.1"
   }
 }
