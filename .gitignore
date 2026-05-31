@@ -14,6 +14,11 @@ playwright-report/
 blob-report/
 .playwright/
 
+# k6 - Resultados de pruebas de rendimiento
+k6-results/
+*.json
+*.html
+
 # Datos Históricos (Archivos Pesados)
 src/db/**/*.csv
 src/db/**/*.zip
