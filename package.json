@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test": "npx playwright test",
+    "test:all": "npx bddgen && npx playwright test && npm run test:perf",
     "test:modular": "npx playwright test --project=modular",
     "test:e2e": "npx playwright test --project=e2e",
     "test:acceptance": "npx playwright test --project=acceptance",
