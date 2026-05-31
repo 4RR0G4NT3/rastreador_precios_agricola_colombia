@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateAll();
     });
 
+    document.getElementById('exportBtn').addEventListener('click', exportData);
+
     document.getElementById('prevPage').addEventListener('click', () => {
         if (currentPage > 1) {
             currentPage--;
@@ -32,6 +34,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateTableData();
     });
 });
+
+function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.style.display = show ? 'flex' : 'none';
+    document.getElementById('searchBtn').disabled = show;
+    document.getElementById('exportBtn').disabled = show;
+}
+
+async function exportData() {
+    const url = `/api/export?${getQueryString()}`;
+    window.location.href = url;
+}
 
 async function loadProducts() {
     try {
@@ -74,10 +88,15 @@ async function loadMarkets() {
 }
 
 async function updateAll() {
-    await Promise.all([
-        updateChartData(),
-        updateTableData()
-    ]);
+    showLoading(true);
+    try {
+        await Promise.all([
+            updateChartData(),
+            updateTableData()
+        ]);
+    } finally {
+        showLoading(false);
+    }
 }
 
 function getQueryString(limit, page) {
