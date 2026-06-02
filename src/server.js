@@ -34,13 +34,42 @@ function setSecurityHeaders(res) {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:;");
 }
 
+// In-memory Rate Limiter
+const rateLimitWindowMs = 60 * 1000; // 1 minuto
+const rateLimitMax = 100; // Max 100 peticiones por IP por minuto
+const ipRequests = new Map();
+
+function checkRateLimit(ip) {
+    const now = Date.now();
+    if (!ipRequests.has(ip)) {
+        ipRequests.set(ip, []);
+    }
+    const requests = ipRequests.get(ip);
+    const recentRequests = requests.filter(time => now - time < rateLimitWindowMs);
+    recentRequests.push(now);
+    ipRequests.set(ip, recentRequests);
+    return recentRequests.length <= rateLimitMax;
+}
+
 const server = http.createServer(async (req, res) => {
     console.log(`${req.method} ${req.url}`);
 
+    const clientIp = req.socket.remoteAddress || 'unknown';
+    if (!checkRateLimit(clientIp)) {
+        res.writeHead(429, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Too Many Requests. Please try again later.' }));
+        return;
+    }
+
     setSecurityHeaders(res);
 
-    // CORS headers for local development if needed
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // CORS headers estrictos en producción
+    if (isProduction) {
+        const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://tu-dominio-seguro.com';
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
     
     if (req.url.startsWith('/api')) {
         return handleApiRoutes(req, res);

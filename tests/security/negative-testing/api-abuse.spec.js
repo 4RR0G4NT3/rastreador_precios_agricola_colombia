@@ -54,4 +54,25 @@ test.describe('Security - API Abuse & Negative Testing', () => {
     expect(response.status()).toBe(404);
   });
 
+  test('should prevent NoSQL injection via arrays in query', async ({ request }) => {
+    // url.parse can return an array if multiple params with the same name are passed
+    const response = await request.get('/api/prices?product=a&product=b');
+    expect(response.status()).toBe(400);
+  });
+
+  test('should trigger rate limiting (429) after 100 requests', async ({ request }) => {
+    test.setTimeout(60000); // Dar más tiempo a esta prueba específica
+    
+    // Enviar 105 peticiones en paralelo para ser más rápidos
+    const requests = [];
+    for (let i = 0; i < 105; i++) {
+        requests.push(request.get('/api/prices?limit=1'));
+    }
+    
+    const responses = await Promise.all(requests);
+    const status429Received = responses.some(res => res.status() === 429);
+    
+    expect(status429Received).toBe(true);
+  });
+
 });

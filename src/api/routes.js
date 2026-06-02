@@ -40,6 +40,16 @@ export async function handleApiRoutes(req, res) {
                 res.setHeader('Content-Type', 'application/json');
                 const { product, market, startDate, endDate, page, limit } = query;
                 
+                // Prevención de Inyección NoSQL (asegurar que no sean arrays u objetos maliciosos)
+                if ((product && typeof product !== 'string') || 
+                    (market && typeof market !== 'string') ||
+                    (startDate && typeof startDate !== 'string') ||
+                    (endDate && typeof endDate !== 'string')) {
+                    res.writeHead(400);
+                    res.end(JSON.stringify({ error: 'Invalid query parameters format. Strings expected.' }));
+                    return;
+                }
+
                 // Validación robusta de parámetros de paginación
                 const isPositiveInteger = (val) => /^\d+$/.test(val) && parseInt(val) > 0;
 
