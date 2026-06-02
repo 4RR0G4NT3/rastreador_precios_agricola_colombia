@@ -26,8 +26,15 @@ k6-results/
 src/db/**/*.csv
 src/db/**/*.zip
 src/db/**/*.dta
+src/db/**/*.DTA
 src/db/**/*.sav
+src/db/**/*.sas7bdat
 src/db/20*
+
+# Reportes de Seguridad (DAST)
+tests/security/dast/reports/*.html
+tests/security/dast/reports/*.json
+tests/security/dast/reports/*.xml
 
 # IDEs y Editores
 .vscode/
