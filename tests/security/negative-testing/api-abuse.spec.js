@@ -27,4 +27,31 @@ test.describe('Security - API Abuse & Negative Testing', () => {
     expect(response.status()).toBe(400);
   });
 
+  test('security headers should be present', async ({ request }) => {
+    const response = await request.get('/');
+    const headers = response.headers();
+    
+    expect(headers['x-content-type-options']).toBe('nosniff');
+    expect(headers['x-frame-options']).toBe('DENY');
+    expect(headers['content-security-policy']).toBeDefined();
+    expect(headers['referrer-policy']).toBe('no-referrer');
+  });
+
+  test('should prevent path traversal (accessing .env)', async ({ request }) => {
+    // Attempting to go up from public/ to root to read .env
+    const response = await request.get('/../.env');
+    
+    // The server should either return 404 (because it prepends PUBLIC_DIR) 
+    // or handle the traversal safely.
+    expect(response.status()).toBe(404);
+    
+    const text = await response.text();
+    expect(text).not.toContain('MONGODB_URI');
+  });
+
+  test('should prevent path traversal (accessing package.json)', async ({ request }) => {
+    const response = await request.get('/../package.json');
+    expect(response.status()).toBe(404);
+  });
+
 });

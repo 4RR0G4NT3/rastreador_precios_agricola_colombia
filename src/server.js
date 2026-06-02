@@ -25,8 +25,19 @@ const MIME_TYPES = {
     '.ico': 'image/x-icon',
 };
 
+function setSecurityHeaders(res) {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    // Content-Security-Policy ajustada para permitir scripts de CDN y fuentes de Google
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:;");
+}
+
 const server = http.createServer(async (req, res) => {
     console.log(`${req.method} ${req.url}`);
+
+    setSecurityHeaders(res);
 
     // CORS headers for local development if needed
     res.setHeader('Access-Control-Allow-Origin', '*');

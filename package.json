@@ -14,9 +14,10 @@
     "test:acceptance": "npx playwright test --project=acceptance",
     "test:perf": "k6 run tests/performance/k6-scripts/api_perf.js",
     "test:security:sca": "npm audit --audit-level=high",
+    "test:security:secrets": "node tests/security/sca/scan-secrets.js",
     "test:security:sast": "eslint --config tests/security/sast/eslint.security.config.js src/",
     "test:security:negative": "playwright test --project=security",
-    "test:security": "npm run test:security:sca && npm run test:security:sast && npm run test:security:negative"
+    "test:security": "npm run test:security:sca && npm run test:security:secrets && npm run test:security:sast && npm run test:security:negative"
   },
   "keywords": [],
   "author": "",
