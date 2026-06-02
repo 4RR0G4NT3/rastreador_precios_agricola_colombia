@@ -40,6 +40,23 @@ export async function handleApiRoutes(req, res) {
                 res.setHeader('Content-Type', 'application/json');
                 const { product, market, startDate, endDate, page, limit } = query;
                 
+                // Validación robusta de parámetros de paginación
+                const isPositiveInteger = (val) => /^\d+$/.test(val) && parseInt(val) > 0;
+
+                if (page && !isPositiveInteger(page)) {
+                    res.writeHead(400);
+                    res.end(JSON.stringify({ error: 'Invalid page parameter. Must be a positive integer.' }));
+                    return;
+                }
+                if (limit && (!isPositiveInteger(limit) || parseInt(limit) > 2000)) {
+                    res.writeHead(400);
+                    res.end(JSON.stringify({ error: 'Invalid limit parameter. Must be a positive integer max 2000.' }));
+                    return;
+                }
+
+                const pageNum = parseInt(page) || 1;
+                const limitNum = parseInt(limit) || 20; // Default a 20 para mayor seguridad
+                
                 const filter = {};
                 if (product) filter.producto = product;
                 if (market) filter.mercado = market;
@@ -50,8 +67,6 @@ export async function handleApiRoutes(req, res) {
                     if (endDate) filter.fecha.$lte = new Date(endDate);
                 }
 
-                const pageNum = parseInt(page) || 1;
-                const limitNum = parseInt(limit) || 1000;
                 const skip = (pageNum - 1) * limitNum;
 
                 const total = await collection.countDocuments(filter);

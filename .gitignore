@@ -16,8 +16,11 @@ blob-report/
 
 # k6 - Resultados de pruebas de rendimiento
 k6-results/
-*.json
-*.html
+# Evitar ignorar archivos de configuración importantes
+!package.json
+!package-lock.json
+!*.eslintrc.json
+!*.eslintrc.sec.json
 
 # Datos Históricos (Archivos Pesados)
 src/db/**/*.csv

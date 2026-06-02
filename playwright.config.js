@@ -33,6 +33,11 @@ export default defineConfig({
       testDir: './tests/e2e',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'security',
+      testDir: './tests/security/negative-testing',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   webServer: {
     command: 'npm run start',
